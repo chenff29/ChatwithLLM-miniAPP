@@ -1,0 +1,19 @@
+<!--pages/subhistory/subhistory.wxml-->
+<!-- <view class="detail-container">
+  <view class="header">详细信息</view>
+  <view class="content">
+    <text>标题: {{date}}</text>
+  </view>
+</view> -->
+
+<!-- 聊天记录显示区 -->
+<view class="container">
+    <scroll-view scroll-y="true" class="chat-container" scroll-into-view="{{scrollIntoView}}">
+        <block wx:for="{{messages}}" wx:key="index">
+            <view class="message {{item.from === 'user' ? 'user-message' : 'bot-message'}}" id="{{'msg-' + index}}">
+                <image src="{{item.avatar}}" class="avatar"></image>
+                <text class="bubble">{{item.text}}</text>
+            </view>
+        </block>
+    </scroll-view>
+</view>

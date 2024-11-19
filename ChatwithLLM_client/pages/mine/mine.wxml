@@ -1,0 +1,15 @@
+<!--pages/mine/mine.wxml-->
+
+<view class="con">
+    <navigator url="/pages/subhistory/subhistory?recordId={{index}}&date={{item}}" hover-class="navigator-hover">
+        <view class="item">关于小程序</view>
+    </navigator>
+
+    <navigator url="/pages/subhistory/subhistory?recordId={{index}}&date={{item}}" hover-class="navigator-hover">
+                <view class="item">研发单位</view>
+    </navigator>
+
+    <navigator url="/pages/subhistory/subhistory?recordId={{index}}&date={{item}}" hover-class="navigator-hover">
+        <view class="item">免责声明</view>
+    </navigator>
+</view>

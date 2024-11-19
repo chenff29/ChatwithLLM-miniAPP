@@ -1,0 +1,8 @@
+<!--logs.wxml-->
+<scroll-view class="scrollarea" scroll-y type="list">
+    <block wx:for="{{chatHistory}}" wx:key="*this">
+        <navigator url="/pages/subhistory/subhistory?recordId={{index}}&date={{item}}" hover-class="navigator-hover">
+            <view class="item">{{item}}</view>
+        </navigator>
+    </block>
+</scroll-view>

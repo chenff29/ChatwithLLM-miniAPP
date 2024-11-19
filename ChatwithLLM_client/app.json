@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/chat/chat",
+    "pages/history/history",
+    "pages/mine/mine",
+    "pages/subhistory/subhistory"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "仲思",
+    "navigationBarBackgroundColor": "#604771"
+  },
+  "tabBar": {
+    "color": "#604771",
+    "selectedColor": "#604771",
+    "list": [
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "寻医问药",
+        "iconPath": "icons/comment.png",
+        "selectedIconPath": "icons/comment-filling.png"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "历史记录",
+        "iconPath": "icons/history.png",
+        "selectedIconPath": "icons/history-filling.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "关于",
+        "iconPath": "icons/user.png",
+        "selectedIconPath": "icons/user-filling.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

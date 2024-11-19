@@ -1,0 +1,220 @@
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+)
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+var clients = make(map[*websocket.Conn]bool)
+
+type ChatRequest struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type RequestBody struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
+}
+
+func generateHandler(c *gin.Context) {
+	// 使用 BindJSON 方法将请求体解析为 ChatRequest 结构体
+	var chatReq RequestBody
+	if err := c.ShouldBindJSON(&chatReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	model := chatReq.Model
+	// answer := []Message{{Role: chatReq.Messages[0]["role"], Content: chatReq.Messages[0]["content"]}}
+	answer := chatReq.Messages
+
+	// 打印 model 和 messages 的值，以便调试
+
+	fmt.Printf("Model: %s\n", model)
+	fmt.Printf("Answer: %s\n", answer)
+
+	requestBody := RequestBody{
+		Model:    model,
+		Messages: answer,
+	}
+
+	jsonData, _ := json.Marshal(requestBody)
+
+	fmt.Println(jsonData)
+
+	resp, err := http.Post("http://localhost:8000/api/chat", "application/json", io.NopCloser(bytes.NewBuffer(jsonData)))
+	if err != nil {
+		fmt.Println("Error sending request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// 读取并打印响应
+	// fmt.Println(time.Now())
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	fmt.Println("Error reading response:", err)
+	// 	return
+	// }
+	// fmt.Println("Response:", string(body))
+
+	// resp, err := http.Post("http://localhost:8000/api/chat", "application/json", io.NopCloser(strings.NewReader(fmt.Sprintf(`{"model": "%s", "messages": [{"role": %s,"content":}]`, model, answer[0]["role"], answer[0]["content"]))))
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	return
+	// }
+	// defer resp.Body.Close()
+
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil && err != io.EOF {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if line != "" {
+			// fmt.Println(line)
+			var message map[string]interface{}
+			if err := json.Unmarshal([]byte(line), &message); err == nil {
+				done, ok := message["done"].(bool)
+				if ok && !done {
+					fmt.Println(time.Now(), message)
+					// broadcastMessage(message)
+				}
+			} else {
+				fmt.Printf("解析 JSON 失败: %v\n", err)
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func broadcastMessage(message map[string]interface{}) {
+	for client := range clients {
+		client.WriteJSON(message)
+	}
+}
+
+// func wsHandler(c *gin.Context) {
+// 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		c.AbortWithStatus(http.StatusInternalServerError)
+// 		return
+// 	}
+// 	defer conn.Close()
+
+// 	clients[conn] = true
+// 	defer delete(clients, conn)
+
+// 	for {
+// 		_, _, err := conn.ReadMessage()
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			break
+// 		}
+// 	}
+// }
+
+func wsHandler(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		fmt.Println(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	defer conn.Close()
+
+	clients[conn] = true
+	defer delete(clients, conn)
+
+	for {
+		// 使用 BindJSON 方法将请求体解析为 ChatRequest 结构体
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		var chatReq ChatRequest
+		if err := json.Unmarshal(message, &chatReq); err != nil {
+			fmt.Printf("failed to parse JSON message: %v", err)
+			continue
+		}
+		fmt.Println("从前端接受请求：", chatReq.Model, chatReq.Messages)
+
+		resp, err := http.Post("http://localhost:8000/api/chat", "application/json", io.NopCloser(bytes.NewBuffer(message)))
+		// resp, err := http.Post("http://localhost:8000/api/chat", "application/json", io.NopCloser(message))
+		if err != nil {
+			fmt.Println("Error sending request:", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil && err != io.EOF {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			if line != "" {
+				// fmt.Println(line)
+				var message map[string]interface{}
+				if err := json.Unmarshal([]byte(line), &message); err == nil {
+					done, ok := message["done"].(bool)
+					if ok && !done {
+						fmt.Println(time.Now(), message)
+						broadcastMessage(message)
+					}
+				} else {
+					fmt.Printf("解析 JSON 失败: %v\n", err)
+				}
+			}
+			if err == io.EOF {
+				break
+			}
+		}
+	}
+}
+
+func main() {
+	r := gin.Default()
+
+	r.POST("/chat", generateHandler)
+	r.GET("/ws", wsHandler)
+	r.GET("/ws_1", WsHandler1)
+
+	r.Run(":8080")
+	// go func() {
+	// 	err := r.Run(":5000")
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }()
+	// select {}
+}

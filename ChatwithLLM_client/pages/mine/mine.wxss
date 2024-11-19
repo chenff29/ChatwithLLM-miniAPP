@@ -1,0 +1,21 @@
+/* pages/mine/mine.wxss */
+.con {
+    margin-top: 200rpx;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.item {
+    background-color: white;
+    width: 98%;
+    height: 100rpx;
+    margin-top: 1rpx;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    justify-content: space-between;
+    padding-left: 20rpx;
+    box-sizing: border-box;
+}

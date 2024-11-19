@@ -1,0 +1,28 @@
+<!--pages/news/news.wxml-->
+<view class="container">
+    <!-- 聊天记录显示区 -->
+    <scroll-view scroll-y="true" class="chat-container" scroll-into-view="{{scrollIntoView}}">
+        <block wx:for="{{messages}}" wx:key="index">
+            <view class="message {{item.from === 'user' ? 'user-message' : 'bot-message'}}" id="{{'msg-' + index}}">
+                <image src="{{item.avatar}}" class="avatar"></image>
+                <text class="bubble">{{item.text}}</text>
+            </view>
+        </block>
+        <view class="message bot-message" wx:if="{{response && response.trim() !== ''}}">
+            <image src="/avatar/robot.png" id="{{scrollIntoView}}" class="avatar"></image>
+            <text class="bubble">{{response}}</text>
+        </view>
+    </scroll-view>
+
+    <!-- <view class="chat_view">
+        <text>{{response}}</text>
+    </view> -->
+
+    <view class="contentinput">
+        <input class="content-input" maxlength="-1" placeholder=" " bindinput='bindKeyInput'/>
+        <button class="image-button" bindtap="sendMessage" size="mini">
+            <image src="/icons/navigation.png" class="button-image"></image>
+        </button>
+    </view>
+
+</view>
