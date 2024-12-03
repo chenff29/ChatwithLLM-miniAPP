@@ -1,1 +1,5 @@
+本项目是一个与后端大模型对话的微信小程序示例，其中包括小程序前端代码ChatwithLLM_client和go语言写的后端代码ChatwithLLM_server。
 
+其中使用WebSocket实现了微信小程序前端中模型回答的流式输出。
+
+在本地运行代码需要使用ollama将大模型部署为api格式，在ChatwithLLM_server/main.go文件中的第113行是访问本地大模型的post请求，或者将其中url换成商用大模型api也是可以的（应该，没试过）。
